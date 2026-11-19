@@ -65,6 +65,7 @@
   select.st-todo { color: var(--fg); } select.st-progress { color: var(--blue); } select.st-blocked { color: var(--bad); } select.st-done { color: var(--ok); }
   .meta { display: flex; flex-wrap: wrap; gap: 6px 16px; margin-top: 10px; font-size: 12px; color: var(--muted); }
   .meta b { color: var(--fg); font-weight: 600; }
+  .meta .linkbtn { margin-left: auto; font-size: 12px; }
   .empty { color: var(--muted); padding: 40px; text-align: center; border: 1px dashed var(--line); border-radius: var(--r); }
   dialog { background: var(--panel); color: var(--fg); border: 1px solid var(--line); border-radius: 24px; padding: 28px; width: min(640px, 94vw); }
   dialog::backdrop { background: rgba(0,0,0,.7); }
@@ -122,7 +123,7 @@
 
 <dialog id="addDlg">
   <form method="dialog" id="addForm">
-    <h3>Add a task</h3>
+    <h3 id="dlgTitle">Add a task</h3>
     <div class="form">
       <label class="full">Task<input name="Task" required maxlength="300"></label>
       <label>Team<select name="Team"></select></label>
@@ -135,7 +136,7 @@
       <label class="full">Notes<textarea name="Notes" rows="3" maxlength="1000"></textarea></label>
     </div>
     <div class="err" id="addErr"></div>
-    <div class="actions"><button class="btn ghost" type="button" id="addCancel">Cancel</button><button class="btn" type="submit">Add task</button></div>
+    <div class="actions"><button class="btn ghost" type="button" id="addCancel">Cancel</button><button class="btn" type="submit" id="dlgSubmit">Add task</button></div>
   </form>
 </dialog>
 
@@ -276,16 +277,18 @@
     fields = syncLinked(t, Object.assign({}, fields));
     Object.assign(t, fields, { Updated: new Date().toISOString().slice(0, 19), 'Updated by': user });
     render();
-    if (DEMO) { demoSave(); return; }
+    if (DEMO) { demoSave(); return true; }
     pending.add(id); setSync('saving', 'Saving…');
     try {
       const r = await apiPost({ action: 'update', id: id, fields: fields });
       if (!r.ok) throw new Error(r.error || 'Save failed');
       Object.assign(t, r.task);
       lastSync = new Date(); setSync('live', syncedText());
+      return true;
     } catch (e) {
       Object.assign(t, before);
       toast('Not saved: ' + e.message, true); setSync('error', 'Save failed');
+      return false;
     } finally {
       pending.delete(id); render();
     }
@@ -373,7 +376,8 @@
         el('div', { class: 'meta' }, [
           t.KPI ? el('span', {}, ['Moves ', el('b', { text: t.KPI })]) : null,
           el('span', { text: t.ID }),
-          t['Updated by'] && t['Updated by'] !== 'setup' ? el('span', { text: 'Updated by ' + t['Updated by'] + ' · ' + fmtUpdated(t.Updated) }) : null])])]);
+          t['Updated by'] && t['Updated by'] !== 'setup' ? el('span', { text: 'Updated by ' + t['Updated by'] + ' · ' + fmtUpdated(t.Updated) }) : null,
+          el('button', { class: 'linkbtn', type: 'button', text: 'Edit task', 'aria-label': 'Edit task ' + t.ID, onclick: () => openEdit(t.ID) })])])]);
   }
 
   function render(keepFocusId) {
@@ -420,12 +424,38 @@
   function fillSelect(sel, opts, first) { sel.replaceChildren(...(first ? [el('option', { value: '', text: first })] : []), ...opts.map((o) => el('option', { value: o, text: o }))); }
   const af = $('addForm');
   fillSelect(af.Team, OPTIONS.Team); fillSelect(af.Market, OPTIONS.Market); fillSelect(af.Phase, OPTIONS.Phase);
-  $('addBtn').addEventListener('click', () => { af.reset(); if (filters.Team) af.Team.value = filters.Team; $('addErr').textContent = ''; $('addDlg').showModal(); });
+  const FORM_FIELDS = ['Task', 'Team', 'Market', 'Phase', 'Owner', 'Due', 'Tool', 'KPI', 'Notes'];
+  let editId = null;   // null = adding a new task
+  function openAdd() {
+    editId = null; af.reset(); if (filters.Team) af.Team.value = filters.Team;
+    $('dlgTitle').textContent = 'Add a task'; $('dlgSubmit').textContent = 'Add task'; $('addErr').textContent = '';
+    $('addDlg').showModal();
+  }
+  function openEdit(id) {
+    const t = tasks.find((x) => x.ID === id); if (!t) return;
+    editId = id; af.reset();
+    FORM_FIELDS.forEach((f) => { af[f].value = t[f] || ''; });
+    $('dlgTitle').textContent = 'Edit task ' + id; $('dlgSubmit').textContent = 'Save changes'; $('addErr').textContent = '';
+    $('addDlg').showModal();
+  }
+  $('addBtn').addEventListener('click', openAdd);
   $('addCancel').addEventListener('click', () => $('addDlg').close());
   af.addEventListener('submit', async (ev) => {
     ev.preventDefault();
     const data = Object.fromEntries(new FormData(af).entries());
     data.Task = (data.Task || '').trim(); if (!data.Task) { $('addErr').textContent = 'Add a task description.'; return; }
+    if (editId) {
+      const t = tasks.find((x) => x.ID === editId);
+      if (!t) { $('addErr').textContent = 'This task no longer exists.'; return; }
+      const changed = {};
+      FORM_FIELDS.forEach((f) => { const v = f === 'Notes' ? (data[f] || '') : (data[f] || '').trim(); if ((t[f] || '') !== v) changed[f] = v; });
+      if (!Object.keys(changed).length) { $('addDlg').close(); return; }
+      $('dlgSubmit').disabled = true;
+      const ok = await save(editId, changed);
+      $('dlgSubmit').disabled = false;
+      if (ok) { $('addDlg').close(); toast('Task ' + editId + ' updated'); } else { $('addErr').textContent = 'Not saved. Check your connection and try again.'; }
+      return;
+    }
     try { await addTask(data); $('addDlg').close(); toast('Task added'); } catch (e) { $('addErr').textContent = e.message; }
   });
 
