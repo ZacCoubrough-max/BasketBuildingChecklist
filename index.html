@@ -78,6 +78,42 @@
   .err { color: var(--bad); font-size: 13px; min-height: 18px; margin-top: 8px; }
   .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 12px 18px; font-size: 13px; z-index: 50; opacity: 0; transition: opacity .2s; pointer-events: none; }
   .toast.show { opacity: 1; } .toast.bad { border-color: var(--bad); }
+  .tabs { display: flex; gap: 6px; margin: 18px 0 0; border-bottom: 1px solid var(--line); }
+  .tab { background: none; border: 0; border-bottom: 3px solid transparent; padding: 10px 16px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); cursor: pointer; font-size: 13px; }
+  .tab[aria-selected="true"] { color: var(--y); border-bottom-color: var(--y); }
+  .tk-upload { display: grid; grid-template-columns: 1fr auto; gap: 18px; align-items: start; margin: 24px 0 8px; }
+  .tk-drop { border: 2px dashed var(--line); border-radius: var(--r); padding: 22px; text-align: center; color: var(--muted); }
+  .tk-drop.over { border-color: var(--y); color: var(--fg); }
+  .tk-drop b { color: var(--fg); }
+  .tk-drop input[type=file] { margin-top: 10px; color: var(--muted); }
+  .tk-side { display: flex; flex-direction: column; gap: 8px; min-width: 200px; }
+  .tk-side label { display: flex; flex-direction: column; gap: 4px; font-size: 11px; color: var(--muted); letter-spacing: .06em; text-transform: uppercase; }
+  .tk-side input { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 9px 11px; width: 120px; }
+  .tk-note { color: var(--muted); font-size: 13px; margin: 6px 0; }
+  .tk-warn { color: #FFB4A9; font-size: 13px; margin: 6px 0; }
+  .tk-mkts { display: flex; gap: 8px; margin: 22px 0 6px; }
+  .tk-mkt { background: var(--panel); border: 1px solid var(--line); border-radius: 999px; padding: 8px 18px; font-weight: 800; cursor: pointer; }
+  .tk-mkt[aria-pressed="true"] { background: var(--y); color: #0F0F0F; border-color: var(--y); }
+  .tk-h { font-size: 15px; letter-spacing: .08em; text-transform: uppercase; margin: 22px 0 10px; }
+  .tk-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+  .tk-sel { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 9px 12px; }
+  .tk-tiles { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+  .tk-tile { cursor: pointer; } .tk-tile:hover, .tk-tile.on { border-color: var(--y); }
+  .tk-tile .pbig { font-size: 28px; }
+  .tk-delta { font-size: 13px; font-weight: 800; margin-bottom: 10px; color: var(--muted); }
+  .tk-delta.good, td.good { color: var(--ok); } .tk-delta.bad, td.bad { color: var(--bad); }
+  .tk-chart { position: relative; }
+  .tk-chart svg { display: block; overflow: visible; }
+  .tk-ax { fill: var(--muted); font-size: 12px; font-family: inherit; } .tk-lab { font-size: 12px; font-family: inherit; font-weight: 700; }
+  .tk-tip { position: absolute; background: var(--panel2); border: 1px solid var(--line); border-radius: 10px; padding: 6px 10px; font-size: 12px; pointer-events: none; white-space: nowrap; }
+  .tw { overflow-x: auto; }
+  .tk-table { width: 100%; border-collapse: collapse; font-size: 13px; margin: 8px 0; }
+  .tk-table th { text-align: left; color: var(--muted); font-weight: 400; border-bottom: 2px solid var(--y); padding: 8px 10px; white-space: nowrap; }
+  .tk-table td { border-bottom: 1px solid var(--line); padding: 8px 10px; white-space: nowrap; }
+  .tk-table tr.tk-base td { color: var(--muted); font-style: italic; }
+  .tk-table td.muted { color: var(--muted); }
+  .tk-new { color: var(--ok); } .tk-replace { color: var(--y); }
+  @media (max-width: 960px) { .tk-tiles { grid-template-columns: repeat(2, 1fr); } .tk-upload { grid-template-columns: 1fr; } }
   @media (max-width: 960px) { .progress { grid-template-columns: repeat(2, 1fr); } .pcard.total { grid-column: 1 / -1; } }
   @media (max-width: 640px) { .fields { grid-template-columns: 1fr 1fr; } .fields .owner { grid-column: 1 / -1; } .form { grid-template-columns: 1fr; } .wrap { padding: 18px 14px 60px; } }
   @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
@@ -87,13 +123,18 @@
 <div class="wrap">
   <header>
     <img src="jd_logo.png" alt="JD Forever Forward">
-    <div class="brand"><span class="eyebrow">SEA Digital · Online basket building</span><h1>90-day checklist</h1></div>
+    <div class="brand"><span class="eyebrow">SEA Digital · Online basket building</span><h1>Basket building hub</h1></div>
     <div class="spacer"></div>
     <span class="pill" id="sync"><span class="dot"></span><span id="syncText">Loading…</span></span>
     <span class="pill">Editing as&nbsp;<b id="userName">—</b>&nbsp;<button class="linkbtn" id="changeUser" type="button">change</button></span>
   </header>
+  <nav class="tabs" role="tablist" aria-label="Views">
+    <button class="tab" role="tab" id="tabChecklist" data-view="checklist" aria-selected="true">Checklist</button>
+    <button class="tab" role="tab" id="tabTracker" data-view="tracker" aria-selected="false">Weekly tracker</button>
+  </nav>
   <div class="banner" id="demoBanner" hidden>Demo mode: no Apps Script URL is set in <code>config.js</code>, so edits are saved in this browser only. Follow the README to connect the Google Sheet.</div>
 
+  <div id="viewChecklist">
   <section class="progress" id="progress" aria-label="Progress by team"></section>
 
   <div class="filters" role="search">
@@ -107,6 +148,29 @@
   </div>
 
   <main id="list" aria-live="polite"></main>
+  </div>
+
+  <div id="viewTracker" hidden>
+    <div class="tk-upload">
+      <div class="tk-drop" id="tkDrop">
+        <b>Upload this week’s online files</b><br>
+        One file per market (MY, SG, TH), in the weekly template: Country and Week columns on every line. Drop them here or choose them.<br>
+        <input type="file" id="tkFile" accept=".xlsx,.csv" multiple aria-label="Weekly files">
+        <p class="tk-note">Files are read in your browser. Only the weekly results are saved to the Google Sheet, not the transaction lines.</p>
+      </div>
+      <div class="tk-side">
+        <label>Year of these weeks<input type="number" id="tkYear" min="2020" max="2100"></label>
+        <p class="tk-note">Uploading a week again replaces it.</p>
+      </div>
+    </div>
+    <div id="tkStaged"></div>
+    <div class="tk-mkts" role="group" aria-label="Market">
+      <button class="tk-mkt" type="button" data-m="MY" aria-pressed="true">MY</button>
+      <button class="tk-mkt" type="button" data-m="SG" aria-pressed="false">SG</button>
+      <button class="tk-mkt" type="button" data-m="TH" aria-pressed="false">TH</button>
+    </div>
+    <div id="tkBody"></div>
+  </div>
 </div>
 
 <dialog id="gate">
@@ -143,6 +207,8 @@
 <div class="toast" id="toast" role="status"></div>
 
 <script src="config.js"></script>
+<script src="xlsx-reader.js"></script>
+<script src="tracker-calc.js"></script>
 <script>
 (function () {
   'use strict';
@@ -416,6 +482,7 @@
     const n = $('gName').value.trim(); if (!n) { ev.preventDefault(); return; }
     user = n; store.set('bb-user', user); $('userName').textContent = user;
     if (!DEMO) { key = $('gKey').value.trim(); store.set('bb-key', key); setSync('saving', 'Connecting…'); refresh(); }
+    if (window.Tracker && !$('viewTracker').hidden) window.Tracker.reload();
   });
   $('gate').addEventListener('cancel', (ev) => { if (!user || (!DEMO && !key)) ev.preventDefault(); });
   $('changeUser').addEventListener('click', () => openGate());
@@ -466,6 +533,21 @@
   $('q').addEventListener('input', (e) => { filters.q = e.target.value.trim(); render(); });
   $('hideDone').addEventListener('change', (e) => { filters.hideDone = e.target.checked; render(); });
 
+  // ---------- shared with the tracker tab ----------
+  window.App = { DEMO: DEMO, URL: URL_, getKey: () => key, getUser: () => user, toast: toast, el: el,
+    onAuthFail: () => { store.del('bb-key'); key = ''; openGate('That passcode didn’t work. Check it with your team lead.'); } };
+
+  // ---------- tabs ----------
+  function showView(v) {
+    const tracker = v === 'tracker';
+    $('viewChecklist').hidden = tracker; $('viewTracker').hidden = !tracker;
+    $('tabChecklist').setAttribute('aria-selected', String(!tracker)); $('tabTracker').setAttribute('aria-selected', String(tracker));
+    if (tracker && window.Tracker) window.Tracker.show();
+    if (location.hash !== '#' + v) history.replaceState(null, '', '#' + v);
+  }
+  document.querySelectorAll('.tab').forEach((b) => b.addEventListener('click', () => showView(b.dataset.view)));
+  window.addEventListener('load', () => showView(location.hash === '#tracker' ? 'tracker' : 'checklist'));
+
   // ---------- start ----------
   $('userName').textContent = user || '—';
   if (DEMO) {
@@ -480,5 +562,6 @@
   }
 })();
 </script>
+<script src="tracker.js"></script>
 </body>
 </html>
