@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Online Basket Building · 90-day checklist</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400..800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0F0F0F; --panel: #1A1A1A; --panel2: #222221; --line: #2B2B2B; --fg: #F2F1EC; --muted: #A3A29C;
+    --y: #FAE31D; --ok: #6FCF7F; --blue: #6FA8FF; --bad: #FF6B5A;
+    --r: 20px; font-family: 'Geist Mono', 'Courier New', monospace;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--fg); font-size: 14px; line-height: 1.45; }
+  button, input, select, textarea { font: inherit; color: inherit; }
+  .wrap { max-width: 1280px; margin: 0 auto; padding: 28px 24px 80px; }
+  header { display: flex; flex-wrap: wrap; align-items: center; gap: 16px 28px; border-bottom: 1px solid var(--line); padding-bottom: 20px; }
+  header img { height: 34px; width: auto; }
+  .brand { display: flex; flex-direction: column; gap: 2px; }
+  .eyebrow { color: var(--y); font-weight: 700; letter-spacing: .14em; font-size: 12px; text-transform: uppercase; }
+  h1 { margin: 0; font-size: 26px; font-weight: 800; letter-spacing: -.01em; text-transform: uppercase; }
+  .spacer { flex: 1; }
+  .pill { display: inline-flex; align-items: center; gap: 8px; border: 1px solid var(--line); border-radius: 999px; padding: 6px 14px; font-size: 12px; color: var(--muted); background: var(--panel); }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); }
+  .pill.live .dot { background: var(--ok); } .pill.saving .dot { background: var(--y); } .pill.error .dot { background: var(--bad); } .pill.demo .dot { background: var(--blue); }
+  .linkbtn { background: none; border: 0; color: var(--y); cursor: pointer; padding: 0; text-decoration: underline; font-size: 12px; }
+  .banner { margin: 16px 0 0; padding: 12px 16px; border-radius: 14px; background: #1d2433; color: #CFE0FF; font-size: 13px; }
+  .progress { display: grid; grid-template-columns: 1.3fr repeat(4, 1fr); gap: 14px; margin: 24px 0; }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: var(--r); padding: 18px 20px; }
+  .pcard { cursor: pointer; transition: border-color .15s; } .pcard:hover, .pcard.on { border-color: var(--y); }
+  .plab { color: var(--muted); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; }
+  .pbig { font-size: 30px; font-weight: 800; margin: 4px 0 10px; }
+  .pcard.total .pbig { color: var(--y); font-size: 40px; }
+  .bar { height: 8px; border-radius: 99px; background: #2E2E2C; overflow: hidden; } .bar > i { display: block; height: 100%; background: var(--y); border-radius: 99px; transition: width .4s; }
+  .psub { color: var(--muted); font-size: 12px; margin-top: 8px; }
+  .filters { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 18px; position: sticky; top: 0; z-index: 5; background: var(--bg); padding: 10px 0; }
+  .filters input[type=search], .filters select { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 9px 12px; }
+  .filters input[type=search] { flex: 1 1 220px; min-width: 180px; }
+  .toggle { display: inline-flex; align-items: center; gap: 8px; color: var(--muted); cursor: pointer; user-select: none; }
+  .btn { background: var(--y); color: #0F0F0F; border: 0; border-radius: 12px; padding: 10px 16px; font-weight: 800; cursor: pointer; }
+  .btn.ghost { background: transparent; color: var(--fg); border: 1px solid var(--line); }
+  .phase { margin: 26px 0 10px; display: flex; align-items: baseline; gap: 12px; }
+  .phase h2 { margin: 0; font-size: 15px; letter-spacing: .1em; text-transform: uppercase; color: #0F0F0F; background: var(--y); border-radius: 999px; padding: 5px 14px; }
+  .phase span { color: var(--muted); font-size: 12px; }
+  .task { display: grid; grid-template-columns: 34px 1fr; gap: 14px; background: var(--panel); border: 1px solid var(--line); border-radius: var(--r); padding: 16px 18px; margin-bottom: 10px; }
+  .task.done { opacity: .55; } .task.done .ttext { text-decoration: line-through; text-decoration-color: var(--muted); }
+  .task.flash { animation: flash 1.2s ease-out; }
+  @keyframes flash { from { border-color: var(--y); } to { border-color: var(--line); } }
+  .chk { width: 28px; height: 28px; border-radius: 8px; border: 2px solid var(--muted); background: transparent; cursor: pointer; display: grid; place-items: center; margin-top: 2px; }
+  .chk.on { background: var(--y); border-color: var(--y); }
+  .chk.on::after { content: ''; width: 8px; height: 14px; border: solid #0F0F0F; border-width: 0 3px 3px 0; transform: rotate(45deg) translate(-1px, -2px); }
+  .ttop { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: flex-start; justify-content: space-between; }
+  .ttext { font-size: 15px; font-weight: 700; flex: 1 1 360px; }
+  .chips { display: flex; gap: 6px; flex-wrap: wrap; }
+  .chip { font-size: 11px; font-weight: 700; letter-spacing: .06em; border-radius: 999px; padding: 3px 10px; background: var(--panel2); border: 1px solid var(--line); color: var(--fg); white-space: nowrap; }
+  .chip.team { background: var(--y); color: #0F0F0F; border-color: var(--y); } .chip.team.all { background: transparent; color: var(--fg); border-color: var(--fg); }
+  .fields { display: grid; grid-template-columns: 150px 1fr 160px; gap: 10px; margin-top: 12px; }
+  .fields label { display: flex; flex-direction: column; gap: 4px; font-size: 11px; color: var(--muted); letter-spacing: .06em; text-transform: uppercase; }
+  .fields input, .fields select, .fields textarea { background: var(--bg); border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; font-size: 13px; text-transform: none; letter-spacing: 0; color: var(--fg); }
+  .fields input:focus, .fields select:focus, .fields textarea:focus { outline: 2px solid var(--y); outline-offset: -1px; }
+  .fields .notes { grid-column: 1 / -1; } .fields textarea { resize: vertical; min-height: 38px; }
+  select.st-todo { color: var(--fg); } select.st-progress { color: var(--blue); } select.st-blocked { color: var(--bad); } select.st-done { color: var(--ok); }
+  .meta { display: flex; flex-wrap: wrap; gap: 6px 16px; margin-top: 10px; font-size: 12px; color: var(--muted); }
+  .meta b { color: var(--fg); font-weight: 600; }
+  .empty { color: var(--muted); padding: 40px; text-align: center; border: 1px dashed var(--line); border-radius: var(--r); }
+  dialog { background: var(--panel); color: var(--fg); border: 1px solid var(--line); border-radius: 24px; padding: 28px; width: min(640px, 94vw); }
+  dialog::backdrop { background: rgba(0,0,0,.7); }
+  dialog h3 { margin: 0 0 16px; font-size: 20px; text-transform: uppercase; }
+  .form { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .form label { display: flex; flex-direction: column; gap: 4px; font-size: 11px; color: var(--muted); letter-spacing: .06em; text-transform: uppercase; }
+  .form .full { grid-column: 1 / -1; }
+  .form input, .form select, .form textarea { background: var(--bg); border: 1px solid var(--line); border-radius: 10px; padding: 9px 11px; font-size: 13px; color: var(--fg); text-transform: none; letter-spacing: 0; }
+  .actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 18px; }
+  .err { color: var(--bad); font-size: 13px; min-height: 18px; margin-top: 8px; }
+  .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 12px 18px; font-size: 13px; z-index: 50; opacity: 0; transition: opacity .2s; pointer-events: none; }
+  .toast.show { opacity: 1; } .toast.bad { border-color: var(--bad); }
+  @media (max-width: 960px) { .progress { grid-template-columns: repeat(2, 1fr); } .pcard.total { grid-column: 1 / -1; } }
+  @media (max-width: 640px) { .fields { grid-template-columns: 1fr 1fr; } .fields .owner { grid-column: 1 / -1; } .form { grid-template-columns: 1fr; } .wrap { padding: 18px 14px 60px; } }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <img src="jd_logo.png" alt="JD Forever Forward">
+    <div class="brand"><span class="eyebrow">SEA Digital · Online basket building</span><h1>90-day checklist</h1></div>
+    <div class="spacer"></div>
+    <span class="pill" id="sync"><span class="dot"></span><span id="syncText">Loading…</span></span>
+    <span class="pill">Editing as&nbsp;<b id="userName">—</b>&nbsp;<button class="linkbtn" id="changeUser" type="button">change</button></span>
+  </header>
+  <div class="banner" id="demoBanner" hidden>Demo mode: no Apps Script URL is set in <code>config.js</code>, so edits are saved in this browser only. Follow the README to connect the Google Sheet.</div>
+
+  <section class="progress" id="progress" aria-label="Progress by team"></section>
+
+  <div class="filters" role="search">
+    <input type="search" id="q" placeholder="Search tasks, owners, notes…" aria-label="Search">
+    <select id="fTeam" aria-label="Team"><option value="">All teams</option></select>
+    <select id="fMarket" aria-label="Market"><option value="">All markets</option></select>
+    <select id="fPhase" aria-label="Phase"><option value="">All phases</option></select>
+    <select id="fStatus" aria-label="Status"><option value="">Any status</option></select>
+    <label class="toggle"><input type="checkbox" id="hideDone"> Hide done</label>
+    <button class="btn" id="addBtn" type="button">+ Add task</button>
+  </div>
+
+  <main id="list" aria-live="polite"></main>
+</div>
+
+<dialog id="gate">
+  <form method="dialog" id="gateForm">
+    <h3>Join the checklist</h3>
+    <div class="form">
+      <label class="full">Your name<input id="gName" required maxlength="60" autocomplete="name"></label>
+      <label class="full" id="gKeyWrap">Team passcode<input id="gKey" type="password" required autocomplete="off"></label>
+    </div>
+    <div class="err" id="gErr"></div>
+    <div class="actions"><button class="btn" type="submit">Continue</button></div>
+  </form>
+</dialog>
+
+<dialog id="addDlg">
+  <form method="dialog" id="addForm">
+    <h3>Add a task</h3>
+    <div class="form">
+      <label class="full">Task<input name="Task" required maxlength="300"></label>
+      <label>Team<select name="Team"></select></label>
+      <label>Market<select name="Market"></select></label>
+      <label>Phase<select name="Phase"></select></label>
+      <label>Owner<input name="Owner" maxlength="80"></label>
+      <label>Due<input name="Due" type="date"></label>
+      <label>Tool<input name="Tool" maxlength="80"></label>
+      <label class="full">KPI it moves<input name="KPI" maxlength="80"></label>
+      <label class="full">Notes<textarea name="Notes" rows="3" maxlength="1000"></textarea></label>
+    </div>
+    <div class="err" id="addErr"></div>
+    <div class="actions"><button class="btn ghost" type="button" id="addCancel">Cancel</button><button class="btn" type="submit">Add task</button></div>
+  </form>
+</dialog>
+
+<div class="toast" id="toast" role="status"></div>
+
+<script src="config.js"></script>
+<script>
+(function () {
+  'use strict';
+  const CFG = window.CHECKLIST_CONFIG || {};
+  const URL_ = (CFG.APPS_SCRIPT_URL || '').trim();
+  const DEMO = !URL_;
+  const REFRESH = Math.max(10, Number(CFG.REFRESH_SECONDS) || 30) * 1000;
+  const OPTIONS = {
+    Team: ['Merch', 'Content', 'CRM', 'All teams'],
+    Market: ['All', 'MY', 'SG', 'TH'],
+    Phase: ['0–30 days', '31–60 days', '61–90 days'],
+    Status: ['To do', 'In progress', 'Blocked', 'Done']
+  };
+  // [Task, Team, Market, Phase, Tool, KPI, Notes]: the demo copy of the starting tasks
+  const SEED = [
+    ["Audit the Crep Protect range online: listed, in stock, searchable", "Merch", "All", "0–30 days", "Shopify", "Shoe-care attach", "Start with the 10 pop-up products per market."],
+    ["Get Crep Protect spray (CREPPROT) live and shippable online", "Merch", "SG", "0–30 days", "Shopify", "Shoe-care attach", "No online sales YTD; it’s the #1 store add-on in SG."],
+    ["Confirm aerosol dangerous-goods rules with carriers", "Merch", "All", "0–30 days", "Carriers", "Shoe-care attach", "If sprays can’t ship, lead with eraser, wipes and pills."],
+    ["Confirm product name for article CURETRAVEL", "Merch", "All", "0–30 days", "Shopify", "—", "Listed as Misc accessories in the data; assumed Cure travel kit."],
+    ["Add a fixed “Protect your pair” slot (Crep + socks) to every footwear product page", "Merch", "All", "0–30 days", "Algolia / Shopify theme", "Footwear → accessory attach", "Fixed slot first: online orders are too thin on add-ons to train models."],
+    ["Turn on Algolia Recommend “Frequently bought together” on footwear pages and cart", "Merch", "All", "0–30 days", "Algolia Recommend", "UPT", "Added via the Shopify theme customiser."],
+    ["Design a standard “Complete the look” module above the fold on footwear pages", "Content", "All", "0–30 days", "Shopify theme", "Footwear → accessory attach", "2–3 items, one-tap add, price shown, next to the size selector."],
+    ["Build the cart-drawer add-on rail (socks, Crep wipes, eraser)", "Content", "All", "0–30 days", "Shopify theme", "UPT", "Low-ticket items only."],
+    ["Add a free-delivery progress bar to the cart drawer", "Content", "All", "0–30 days", "Shopify theme", "UPT", "Fill in each market’s threshold, if there is one."],
+    ["Build post-purchase “Protect your new pair” flow for footwear orders with no accessory", "CRM", "All", "0–30 days", "Bloomreach", "Shoe-care attach", "Email/SMS 2–5 days after delivery, Crep + socks."],
+    ["Load the 10-product pop-up sets into Bloomreach", "CRM", "All", "0–30 days", "Bloomreach", "Footwear → accessory attach", "Use bloomreach_popup_product_sets.csv."],
+    ["Agree the holdout / control approach for every test", "All teams", "All", "0–30 days", "Bloomreach / Algolia", "—", "So we can show what is genuinely incremental."],
+    ["Set up the weekly scorecard per market", "All teams", "All", "0–30 days", "Reporting", "All KPIs", "UPT, % multi-item baskets, footwear → accessory / shoe care / socks attach."],
+    ["Bundles: hero runners + Crep Protect spray (On Cloudtilt, Cloudmonster, NB 530/740)", "Merch", "All", "31–60 days", "Shopify Bundles", "Shoe-care attach", "Spray is in 10–17% of store baskets for On styles."],
+    ["Bundles: suede and leather styles + matching care (Samba OG / Speedcat + eraser, AF1 + wipes)", "Merch", "All", "31–60 days", "Shopify Bundles", "Shoe-care attach", "Match care to the shoe’s material."],
+    ["Sock multipacks and a multi-buy offer (Nike Everyday 3pk / 6pk)", "Merch", "All", "31–60 days", "Shopify Bundles / discounts", "Socks attach", "Socks match the shoe’s brand: adidas with Samba, NB with 530/740."],
+    ["Algolia rules: “Protect your pair” banner on hero searches (AF1, Samba, 530, 740, Cloudtilt)", "Merch", "All", "31–60 days", "Algolia Rules", "Footwear → accessory attach", ""],
+    ["Algolia redirects: “crep”, “shoe cleaner”, “protector” → care landing page", "Merch", "All", "31–60 days", "Algolia Rules", "Shoe-care attach", "Needs the care landing page live first."],
+    ["Build the care landing page", "Content", "All", "31–60 days", "Shopify", "Shoe-care attach", "Target for the search redirects."],
+    ["Franchise kit and care-guide pages (“The AF1 kit”, “Keep your 530s clean”)", "Content", "All", "31–60 days", "Shopify", "Footwear → accessory attach", "Link from product pages and search."],
+    ["Add a care line to hero footwear descriptions, linked to Crep Protect", "Content", "All", "31–60 days", "Shopify", "Shoe-care attach", ""],
+    ["Abandoned cart email: add a care + socks block", "CRM", "All", "31–60 days", "Bloomreach", "UPT", "Built on the abandoned cart with recommendations template."],
+    ["Launch the add-to-cart pop-up (weblayer) in Malaysia as the pilot, with a holdout", "CRM", "MY", "31–60 days", "Bloomreach weblayer", "Footwear → accessory attach", "Two products: one care item that suits the shoe, one pair of socks."],
+    ["Align the pop-up and the cart rail so they don’t show the same products", "CRM", "All", "31–60 days", "Bloomreach / Shopify theme", "—", "With Content."],
+    ["Review the Malaysia pop-up pilot against its holdout", "CRM", "MY", "61–90 days", "Bloomreach", "UPT", "Go / no-go for SG and TH."],
+    ["Roll out the add-to-cart pop-up to Singapore", "CRM", "SG", "61–90 days", "Bloomreach weblayer", "Footwear → accessory attach", "Only once the spray is live online, or swap in the eraser."],
+    ["Roll out the add-to-cart pop-up to Thailand", "CRM", "TH", "61–90 days", "Bloomreach weblayer", "Footwear → accessory attach", ""],
+    ["Crep Cure refill replenishment email", "CRM", "TH", "61–90 days", "Bloomreach", "Shoe-care attach", "Cure refill is the #2 add-on on most Thai styles."],
+    ["Footwear-only buyer segments with targeted accessory campaigns, tested vs holdout", "CRM", "All", "61–90 days", "Bloomreach", "Footwear → accessory attach", ""],
+    ["Switch from fixed slots to Algolia models where online add-on sales have built", "Merch", "All", "61–90 days", "Algolia Recommend", "UPT", ""],
+    ["Restyle hero footwear imagery with visible socks", "Content", "All", "61–90 days", "Shopify", "Socks attach", ""],
+    ["Refresh the pop-up product sets from the latest store data", "CRM", "All", "61–90 days", "Bloomreach", "—", "Quarterly."],
+    ["Scope phase 2: apparel cross-sell and multi-buys", "All teams", "All", "61–90 days", "—", "UPT", "Men’s tees, shorts and Own Brand under-sell online."],
+    ["90-day review against scorecard targets", "All teams", "All", "61–90 days", "Reporting", "All KPIs", "Target: halfway to the store rate."]
+  ];
+
+  const $ = (id) => document.getElementById(id);
+  const store = {
+    get: (k) => { try { return localStorage.getItem(k); } catch (e) { return null; } },
+    set: (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} },
+    del: (k) => { try { localStorage.removeItem(k); } catch (e) {} }
+  };
+  let tasks = [];
+  let user = store.get('bb-user') || '';
+  let key = store.get('bb-key') || '';
+  const pending = new Set();       // task ids with a save in flight
+  let lastSync = null;
+  let filters = { q: '', Team: '', Market: '', Phase: '', Status: '', hideDone: false };
+
+  // ---------- sync state ----------
+  function setSync(state, text) {
+    const p = $('sync'); p.className = 'pill ' + state; $('syncText').textContent = text;
+  }
+  function syncedText() {
+    return lastSync ? 'Live · synced ' + lastSync.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Live';
+  }
+  let toastT;
+  function toast(msg, bad) {
+    const t = $('toast'); t.textContent = msg; t.className = 'toast show' + (bad ? ' bad' : '');
+    clearTimeout(toastT); toastT = setTimeout(() => { t.className = 'toast'; }, 3200);
+  }
+
+  // ---------- data layer ----------
+  function demoLoad() {
+    const saved = store.get('bb-demo');
+    if (saved) { try { return JSON.parse(saved); } catch (e) {} }
+    return SEED.map((s, i) => ({ ID: 'T' + String(i + 1).padStart(2, '0'), Done: false, Task: s[0], Team: s[1], Market: s[2], Phase: s[3],
+      Status: 'To do', Owner: '', Due: '', Tool: s[4], KPI: s[5], Notes: s[6], Updated: '', 'Updated by': '' }));
+  }
+  function demoSave() { store.set('bb-demo', JSON.stringify(tasks)); }
+
+  async function apiGet() {
+    const res = await fetch(URL_ + '?key=' + encodeURIComponent(key) + '&t=' + Date.now(), { cache: 'no-store' });
+    return res.json();
+  }
+  async function apiPost(body) {
+    // A plain-text body keeps this a "simple" request, so the browser sends no CORS preflight
+    // (Apps Script cannot answer one).
+    const res = await fetch(URL_, { method: 'POST', body: JSON.stringify(Object.assign({ key: key, user: user }, body)) });
+    return res.json();
+  }
+
+  function syncLinked(t, fields) {
+    // Same rule as the Apps Script: the tick and the status stay in step.
+    if ('Done' in fields && !('Status' in fields)) {
+      if (fields.Done) fields.Status = 'Done'; else if (t.Status === 'Done') fields.Status = 'In progress';
+    }
+    if ('Status' in fields && !('Done' in fields)) fields.Done = fields.Status === 'Done';
+    return fields;
+  }
+
+  async function refresh(quiet) {
+    if (DEMO) return;
+    if (!key) return;
+    try {
+      const r = await apiGet();
+      if (!r.ok) {
+        if (r.error === 'unauthorised') { store.del('bb-key'); key = ''; openGate('That passcode didn’t work. Check it with your team lead.'); setSync('error', 'Not connected'); return; }
+        throw new Error(r.error || 'Load failed');
+      }
+      const editing = document.activeElement && document.activeElement.closest && document.activeElement.closest('.task');
+      const editingId = editing ? editing.dataset.id : null;
+      const old = new Map(tasks.map((t) => [t.ID, t]));
+      tasks = r.tasks.map((t) => (pending.has(t.ID) || t.ID === editingId) && old.has(t.ID) ? old.get(t.ID) : t);
+      lastSync = new Date();
+      setSync('live', syncedText());
+      render(editingId);
+    } catch (e) {
+      setSync('error', 'Offline · retrying');
+      if (!quiet) toast('Couldn’t reach the Google Sheet: ' + e.message, true);
+    }
+  }
+
+  async function save(id, fields) {
+    const t = tasks.find((x) => x.ID === id); if (!t) return;
+    const before = Object.assign({}, t);
+    fields = syncLinked(t, Object.assign({}, fields));
+    Object.assign(t, fields, { Updated: new Date().toISOString().slice(0, 19), 'Updated by': user });
+    render();
+    if (DEMO) { demoSave(); return; }
+    pending.add(id); setSync('saving', 'Saving…');
+    try {
+      const r = await apiPost({ action: 'update', id: id, fields: fields });
+      if (!r.ok) throw new Error(r.error || 'Save failed');
+      Object.assign(t, r.task);
+      lastSync = new Date(); setSync('live', syncedText());
+    } catch (e) {
+      Object.assign(t, before);
+      toast('Not saved: ' + e.message, true); setSync('error', 'Save failed');
+    } finally {
+      pending.delete(id); render();
+    }
+  }
+
+  async function addTask(data) {
+    if (DEMO) {
+      const n = Math.max(0, ...tasks.map((t) => Number(String(t.ID).replace(/\D/g, '')) || 0)) + 1;
+      tasks.push(Object.assign({ ID: 'T' + String(n).padStart(2, '0'), Done: false, Status: 'To do', Updated: new Date().toISOString().slice(0, 19), 'Updated by': user }, data));
+      demoSave(); render(); return true;
+    }
+    setSync('saving', 'Saving…');
+    const r = await apiPost({ action: 'add', task: data });
+    if (!r.ok) { setSync('error', 'Save failed'); throw new Error(r.error || 'Add failed'); }
+    tasks.push(r.task); lastSync = new Date(); setSync('live', syncedText()); render(); return true;
+  }
+
+  // ---------- rendering ----------
+  function el(tag, attrs, kids) {
+    const n = document.createElement(tag);
+    if (attrs) for (const k in attrs) {
+      if (k === 'class') n.className = attrs[k];
+      else if (k === 'text') n.textContent = attrs[k];
+      else if (k.startsWith('on')) n.addEventListener(k.slice(2), attrs[k]);
+      else if (attrs[k] !== false && attrs[k] != null) n.setAttribute(k, attrs[k] === true ? '' : attrs[k]);
+    }
+    (kids || []).forEach((c) => c && n.appendChild(typeof c === 'string' ? document.createTextNode(c) : c));
+    return n;
+  }
+  const stClass = (s) => ({ 'To do': 'st-todo', 'In progress': 'st-progress', Blocked: 'st-blocked', Done: 'st-done' })[s] || 'st-todo';
+  function fmtUpdated(s) {
+    if (!s) return '';
+    const d = new Date(s); if (isNaN(d)) return s;
+    return d.toLocaleDateString([], { day: 'numeric', month: 'short' }) + ' ' + d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  }
+
+  function renderProgress() {
+    const box = $('progress'); box.replaceChildren();
+    const done = tasks.filter((t) => t.Done).length, total = tasks.length;
+    const pct = total ? Math.round(100 * done / total) : 0;
+    box.appendChild(el('div', { class: 'card pcard total' + (filters.Team === '' ? ' on' : ''), onclick: () => setFilter('Team', '') }, [
+      el('div', { class: 'plab', text: 'Overall' }), el('div', { class: 'pbig', text: pct + '%' }),
+      el('div', { class: 'bar' }, [el('i', { style: 'width:' + pct + '%' })]),
+      el('div', { class: 'psub', text: done + ' of ' + total + ' tasks done · ' + tasks.filter((t) => t.Status === 'Blocked').length + ' blocked' })]));
+    OPTIONS.Team.forEach((team) => {
+      const ts = tasks.filter((t) => t.Team === team), d = ts.filter((t) => t.Done).length, p = ts.length ? Math.round(100 * d / ts.length) : 0;
+      box.appendChild(el('div', { class: 'card pcard' + (filters.Team === team ? ' on' : ''), role: 'button', tabindex: '0', title: 'Show only ' + team,
+        onclick: () => setFilter('Team', filters.Team === team ? '' : team) }, [
+        el('div', { class: 'plab', text: team }), el('div', { class: 'pbig', text: d + ' / ' + ts.length }),
+        el('div', { class: 'bar' }, [el('i', { style: 'width:' + p + '%' })]), el('div', { class: 'psub', text: p + '% done' })]));
+    });
+  }
+
+  function matches(t) {
+    if (filters.hideDone && t.Done) return false;
+    for (const f of ['Team', 'Phase', 'Status']) if (filters[f] && t[f] !== filters[f]) return false;
+    // A market filter keeps that market's tasks plus the ones for all markets.
+    if (filters.Market && t.Market !== filters.Market && t.Market !== 'All') return false;
+    if (filters.q) {
+      const hay = [t.Task, t.Owner, t.Notes, t.Tool, t.KPI, t.ID].join(' ').toLowerCase();
+      if (!hay.includes(filters.q.toLowerCase())) return false;
+    }
+    return true;
+  }
+
+  function taskCard(t) {
+    const commit = (field) => (ev) => { const v = ev.target.value; if ((t[field] || '') !== v) save(t.ID, { [field]: v }); };
+    const status = el('select', { class: stClass(t.Status), 'aria-label': 'Status', onchange: commit('Status') },
+      OPTIONS.Status.map((s) => el('option', { value: s, text: s, selected: s === t.Status })));
+    return el('article', { class: 'task' + (t.Done ? ' done' : ''), 'data-id': t.ID }, [
+      el('button', { class: 'chk' + (t.Done ? ' on' : ''), type: 'button', role: 'checkbox', 'aria-checked': String(!!t.Done), 'aria-label': 'Done: ' + t.Task,
+        onclick: () => save(t.ID, { Done: !t.Done }) }),
+      el('div', {}, [
+        el('div', { class: 'ttop' }, [
+          el('div', { class: 'ttext', text: t.Task }),
+          el('div', { class: 'chips' }, [
+            el('span', { class: 'chip team' + (t.Team === 'All teams' ? ' all' : ''), text: t.Team }),
+            el('span', { class: 'chip', text: t.Market === 'All' ? 'All markets' : t.Market }),
+            t.Tool ? el('span', { class: 'chip', text: t.Tool }) : null])]),
+        el('div', { class: 'fields' }, [
+          el('label', {}, ['Status', status]),
+          el('label', { class: 'owner' }, ['Owner', el('input', { value: t.Owner || '', placeholder: 'Who owns this?', maxlength: '80', onchange: commit('Owner') })]),
+          el('label', {}, ['Due', el('input', { type: 'date', value: t.Due || '', onchange: commit('Due') })]),
+          el('label', { class: 'notes' }, ['Notes', el('textarea', { rows: '1', maxlength: '1000', placeholder: 'Add a note…', onchange: commit('Notes') }, [t.Notes || ''])])]),
+        el('div', { class: 'meta' }, [
+          t.KPI ? el('span', {}, ['Moves ', el('b', { text: t.KPI })]) : null,
+          el('span', { text: t.ID }),
+          t['Updated by'] && t['Updated by'] !== 'setup' ? el('span', { text: 'Updated by ' + t['Updated by'] + ' · ' + fmtUpdated(t.Updated) }) : null])])]);
+  }
+
+  function render(keepFocusId) {
+    // Keep the cursor where it was if someone is typing in a task while a refresh lands.
+    const ae = document.activeElement, focusTask = ae && ae.closest && ae.closest('.task');
+    const focusIdx = focusTask ? Array.from(focusTask.querySelectorAll('input,select,textarea')).indexOf(ae) : -1;
+    const focusId = focusTask ? focusTask.dataset.id : keepFocusId;
+    renderProgress();
+    const list = $('list'); list.replaceChildren();
+    const shown = tasks.filter(matches);
+    if (!shown.length) { list.appendChild(el('div', { class: 'empty', text: tasks.length ? 'No tasks match these filters.' : 'No tasks yet.' })); return; }
+    OPTIONS.Phase.concat(['']).forEach((ph) => {
+      const ts = shown.filter((t) => ph ? t.Phase === ph : OPTIONS.Phase.indexOf(t.Phase) < 0);
+      if (!ts.length) return;
+      const all = tasks.filter((t) => ph ? t.Phase === ph : OPTIONS.Phase.indexOf(t.Phase) < 0);
+      list.appendChild(el('div', { class: 'phase' }, [el('h2', { text: ph || 'Other' }), el('span', { text: all.filter((t) => t.Done).length + ' of ' + all.length + ' done' })]));
+      ts.forEach((t) => list.appendChild(taskCard(t)));
+    });
+    if (focusId && focusIdx >= 0) {
+      const card = list.querySelector('.task[data-id="' + CSS.escape(focusId) + '"]');
+      const f = card && card.querySelectorAll('input,select,textarea')[focusIdx];
+      if (f) f.focus();
+    }
+  }
+
+  function setFilter(k, v) { filters[k] = v; const s = { Team: 'fTeam', Market: 'fMarket', Phase: 'fPhase', Status: 'fStatus' }[k]; if (s) $(s).value = v; render(); }
+
+  // ---------- gate (name + passcode) ----------
+  function openGate(msg) {
+    $('gName').value = user; $('gKey').value = '';
+    $('gKeyWrap').hidden = DEMO; $('gKey').required = !DEMO;
+    $('gErr').textContent = msg || '';
+    if (!$('gate').open) $('gate').showModal();
+  }
+  $('gateForm').addEventListener('submit', (ev) => {
+    const n = $('gName').value.trim(); if (!n) { ev.preventDefault(); return; }
+    user = n; store.set('bb-user', user); $('userName').textContent = user;
+    if (!DEMO) { key = $('gKey').value.trim(); store.set('bb-key', key); setSync('saving', 'Connecting…'); refresh(); }
+  });
+  $('gate').addEventListener('cancel', (ev) => { if (!user || (!DEMO && !key)) ev.preventDefault(); });
+  $('changeUser').addEventListener('click', () => openGate());
+
+  // ---------- add task ----------
+  function fillSelect(sel, opts, first) { sel.replaceChildren(...(first ? [el('option', { value: '', text: first })] : []), ...opts.map((o) => el('option', { value: o, text: o }))); }
+  const af = $('addForm');
+  fillSelect(af.Team, OPTIONS.Team); fillSelect(af.Market, OPTIONS.Market); fillSelect(af.Phase, OPTIONS.Phase);
+  $('addBtn').addEventListener('click', () => { af.reset(); if (filters.Team) af.Team.value = filters.Team; $('addErr').textContent = ''; $('addDlg').showModal(); });
+  $('addCancel').addEventListener('click', () => $('addDlg').close());
+  af.addEventListener('submit', async (ev) => {
+    ev.preventDefault();
+    const data = Object.fromEntries(new FormData(af).entries());
+    data.Task = (data.Task || '').trim(); if (!data.Task) { $('addErr').textContent = 'Add a task description.'; return; }
+    try { await addTask(data); $('addDlg').close(); toast('Task added'); } catch (e) { $('addErr').textContent = e.message; }
+  });
+
+  // ---------- filters ----------
+  fillSelect($('fTeam'), OPTIONS.Team, 'All teams'); fillSelect($('fMarket'), OPTIONS.Market.filter((m) => m !== 'All'), 'All markets');
+  fillSelect($('fPhase'), OPTIONS.Phase, 'All phases'); fillSelect($('fStatus'), OPTIONS.Status, 'Any status');
+  ['Team', 'Market', 'Phase', 'Status'].forEach((k) => $('f' + k).addEventListener('change', (e) => { filters[k] = e.target.value; render(); }));
+  $('q').addEventListener('input', (e) => { filters.q = e.target.value.trim(); render(); });
+  $('hideDone').addEventListener('change', (e) => { filters.hideDone = e.target.checked; render(); });
+
+  // ---------- start ----------
+  $('userName').textContent = user || '—';
+  if (DEMO) {
+    $('demoBanner').hidden = false; setSync('demo', 'Demo mode');
+    tasks = demoLoad(); render();
+    if (!user) openGate();
+  } else {
+    render();
+    if (!user || !key) openGate(); else { setSync('saving', 'Connecting…'); refresh(); }
+    setInterval(() => { if (!document.hidden && key) refresh(true); }, REFRESH);
+    document.addEventListener('visibilitychange', () => { if (!document.hidden && key) refresh(true); });
+  }
+})();
+</script>
+</body>
+</html>
