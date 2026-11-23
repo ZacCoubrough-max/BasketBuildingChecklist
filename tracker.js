@@ -14,20 +14,21 @@
 
   // better: 'up' = higher is better, 'down' = lower is better
   const METRICS = [
-    { k: 'upt', label: 'Items per basket (UPT)', fmt: 'dec2', better: 'up', tile: true },
-    { k: 'fw_plus_acc_pct', label: 'Baskets with footwear + an accessory', fmt: 'pct', better: 'up', tile: true },
-    { k: 'fw_acc_pct', label: 'Footwear baskets with any accessory', fmt: 'pct', better: 'up', tile: true },
-    { k: 'fw_shoecare_pct', label: 'Footwear baskets with shoe care', fmt: 'pct', better: 'up', tile: true },
-    { k: 'fw_socks_pct', label: 'Footwear baskets with socks', fmt: 'pct', better: 'up', tile: true },
-    { k: 'single_unit_pct', label: 'Single-unit baskets', fmt: 'pct', better: 'down', tile: true },
-    { k: 'crep_sales_pct', label: 'Crep Protect, % of online sales', fmt: 'pct2', better: 'up', tile: true },
-    { k: 'acc_sales_pct', label: 'Accessories, % of online sales', fmt: 'pct', better: 'up', tile: true },
-    { k: 'multi_unit_sales_pct', label: 'Sales from multi-item baskets', fmt: 'pct', better: 'up' },
+    { k: 'upt', label: 'Items per basket (UPT)', fmt: 'dec2', better: 'up', tile: true, gap: true },
+    { k: 'fw_plus_acc_pct', label: 'Baskets with footwear + an accessory', fmt: 'pct', better: 'up', tile: true, gap: true },
+    { k: 'fw_acc_pct', label: 'Footwear baskets with any accessory', fmt: 'pct', better: 'up', tile: true, gap: true },
+    { k: 'fw_shoecare_pct', label: 'Footwear baskets with shoe care', fmt: 'pct', better: 'up', tile: true, gap: true },
+    { k: 'fw_socks_pct', label: 'Footwear baskets with socks', fmt: 'pct', better: 'up', tile: true, gap: true },
+    { k: 'single_unit_pct', label: 'Single-unit baskets', fmt: 'pct', better: 'down', tile: true, gap: true },
+    { k: 'crep_sales_pct', label: 'Crep Protect, % of online sales', fmt: 'pct2', better: 'up', tile: true, gap: true },
+    { k: 'acc_sales_pct', label: 'Accessories, % of online sales', fmt: 'pct', better: 'up', tile: true, gap: true },
+    { k: 'multi_unit_sales_pct', label: 'Sales from multi-item baskets', fmt: 'pct', better: 'up', gap: true },
     { k: 'atv', label: 'Average basket value', fmt: 'money', better: 'up' },
-    { k: 'return_pct', label: 'Returns, % of gross sales', fmt: 'pct', better: 'down' }
+    { k: 'return_pct', label: 'Returns, % of gross sales', fmt: 'pct', better: 'down', wrap: true }
   ];
 
   let rows = [];            // every saved KPI row (baseline + weeks)
+  let wrapWeek = {};        // market -> chosen 'year|week' for the wrap panel
   let market = 'MY', metric = 'upt';
   let staged = [];          // parsed uploads waiting to be saved
   let loaded = false, loading = false;
@@ -153,7 +154,7 @@
     if (latest && b !== null) {
       const d = v - b, good = def.better === 'up' ? d > 0 : d < 0;
       kids.push(el('div', { class: 'tk-delta ' + (Math.abs(d) < 1e-9 ? '' : good ? 'good' : 'bad'), text: fmtDelta(def.fmt, d) + ' vs baseline' }));
-      if (st !== null && Math.abs(st - b) > 1e-9) {
+      if (def.gap && st !== null && Math.abs(st - b) > 1e-9) {
         const closed = (v - b) / (st - b), w = Math.max(0, Math.min(1, closed));
         kids.push(el('div', { class: 'bar' }, [el('i', { style: 'width:' + (100 * w).toFixed(1) + '%' })]));
         kids.push(el('div', { class: 'psub', text: (closed < 0 ? 'Behind the baseline' : Math.round(100 * closed) + '% of the gap to stores closed') }));
@@ -226,15 +227,85 @@
     return el('div', { class: 'tw' }, [t]);
   }
 
+  // The week before: week - 1, or the last week of the year before when this is week 1.
+  function prevRow(m, r) {
+    if (!r) return null;
+    const y = num(r.Year), w = num(r.Week), on = weeksFor(m);
+    if (w > 1) return on.find((x) => num(x.Year) === y && num(x.Week) === w - 1) || null;
+    const last = on.filter((x) => num(x.Year) === y - 1).pop();
+    return last && num(last.Week) >= 52 ? last : null;
+  }
+  function prevLabel(r) { return r ? (num(r.Week) > 1 ? 'week ' + (num(r.Week) - 1) : 'the last week of ' + (num(r.Year) - 1)) : ''; }
+
+  // ---------- weekly wrap ----------
+  function buildWrap(m, cur) {
+    const prev = prevRow(m, cur), bOn = base(m, 'Online'), bSt = base(m, 'Stores');
+    const defs = METRICS.filter((d) => d.tile || d.wrap);
+    const bullets = []; let ahead = 0, improved = 0, best = null;
+    const pctChg = (a, b) => (b ? ((a - b) / Math.abs(b) * 100) : 0);
+    const sgn = (x) => (x > 0 ? '+' : x < 0 ? '−' : '±') + Math.abs(x).toFixed(1) + '%';
+    bullets.push('Volume: ' + fmt('int', cur.baskets) + ' baskets' + (prev ? ' (' + sgn(pctChg(num(cur.baskets), num(prev.baskets))) + ' week on week)' : '') +
+      ', net sales ' + fmt('money', cur.net_sales, m) + (prev ? ' (' + sgn(pctChg(num(cur.net_sales), num(prev.net_sales))) + ' week on week)' : '') + '.');
+    defs.forEach((d) => {
+      const v = num(cur[d.k]);
+      const good = (x) => (d.better === 'up' ? x > 1e-9 : x < -1e-9), bad = (x) => (d.better === 'up' ? x < -1e-9 : x > 1e-9);
+      let t = d.label + ': ' + fmt(d.fmt, v, m);
+      if (bOn) {
+        const db = v - num(bOn[d.k]);
+        t += ', ' + (good(db) ? 'ahead of' : bad(db) ? 'behind' : 'level with') + ' the baseline (' + fmtDelta(d.fmt, db) + ' vs ' + fmt(d.fmt, bOn[d.k], m) + ')';
+        if (good(db)) ahead++;
+        if (d.gap && bSt && Math.abs(num(bSt[d.k]) - num(bOn[d.k])) > 1e-9) {
+          const closed = db / (num(bSt[d.k]) - num(bOn[d.k]));
+          if (closed > 0) { t += ', ' + Math.round(100 * closed) + '% of the gap to stores closed'; if (!best || closed > best.closed) best = { label: d.label, closed: closed, delta: fmtDelta(d.fmt, db) }; }
+        }
+      }
+      if (prev) {
+        const dw = v - num(prev[d.k]);
+        const word = d.better === 'up' ? (dw > 1e-9 ? 'up on' : dw < -1e-9 ? 'down on' : 'flat on')
+          : (good(dw) ? 'better than' : bad(dw) ? 'worse than' : 'flat on');
+        t += '; ' + word + ' last week (' + fmtDelta(d.fmt, dw) + ')';
+        if (good(dw)) improved++;
+      }
+      bullets.push(t + '.');
+    });
+    let head = ahead + ' of ' + defs.length + ' measures are ahead of the baseline';
+    head += prev ? '; ' + improved + ' improved on week ' + prev.Week + '.' : '. No data for ' + prevLabel(cur) + ', so there’s no week-on-week comparison yet.';
+    if (best) head += ' Biggest gain: ' + best.label.toLowerCase() + ' (' + best.delta + ', ' + Math.round(100 * best.closed) + '% of the gap to stores closed).';
+    return { head: head, bullets: bullets, prev: prev };
+  }
+
+  function copyText(text, what) {
+    const done = () => App.toast(what + ' copied');
+    if (navigator.clipboard && window.isSecureContext) navigator.clipboard.writeText(text).then(done, () => fallback());
+    else fallback();
+    function fallback() { const ta = el('textarea', { style: 'position:fixed;opacity:0' }, [text]); document.body.appendChild(ta); ta.select(); try { document.execCommand('copy'); done(); } catch (e) { App.toast('Copy failed: select the text instead', true); } ta.remove(); }
+  }
+
+  function wrapPanel(m, ws) {
+    const panel = el('div', { class: 'card tk-wrap', id: 'tkWrap' });
+    const keyOf = (r) => num(r.Year) + '|' + num(r.Week);
+    const chosen = wrapWeek[m] && ws.find((r) => keyOf(r) === wrapWeek[m]) || ws[ws.length - 1];
+    const sel = el('select', { class: 'tk-sel', 'aria-label': 'Week for the wrap' }, ws.slice().reverse().map((r) => el('option', { value: keyOf(r), text: 'Week ' + r.Week + ' ' + r.Year, selected: r === chosen })));
+    sel.addEventListener('change', () => { wrapWeek[m] = sel.value; render(); });
+    const w = buildWrap(m, chosen);
+    const plain = NAMES[m] + ' online · week ' + chosen.Week + ' ' + chosen.Year + ' wrap\n' + w.head + '\n' + w.bullets.map((b) => '• ' + b).join('\n');
+    panel.appendChild(el('div', { class: 'tk-row' }, [el('h2', { class: 'tk-h', text: 'Weekly wrap' }), el('div', { class: 'tk-row' }, [sel,
+      el('button', { class: 'btn ghost', type: 'button', text: 'Copy wrap', onclick: () => copyText(plain, 'Wrap') })])]));
+    panel.appendChild(el('p', { class: 'tk-headline', text: w.head }));
+    panel.appendChild(el('ul', { class: 'tk-bullets' }, w.bullets.map((b) => el('li', { text: b }))));
+    return panel;
+  }
+
   function render() {
     const v = $('tkBody'); if (!v) return;
     document.querySelectorAll('.tk-mkt').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.m === market)));
     v.replaceChildren();
     if (!loaded) { v.appendChild(el('p', { class: 'tk-note', text: 'Loading…' })); return; }
-    const ws = weeksFor(market), latest = ws[ws.length - 1] || null, prev = ws[ws.length - 2] || null;
+    const ws = weeksFor(market), latest = ws[ws.length - 1] || null, prev = prevRow(market, latest);
     const bOn = base(market, 'Online'), bSt = base(market, 'Stores');
     v.appendChild(el('h2', { class: 'tk-h', text: latest ? NAMES[market] + ' · week ' + latest.Week + ' ' + latest.Year + ' vs baseline' : NAMES[market] + ' · no weeks uploaded yet' }));
     if (!latest) v.appendChild(el('p', { class: 'tk-note', text: 'Upload this market’s weekly online file above. Until then, the tiles show the baseline only.' }));
+    if (latest) v.appendChild(wrapPanel(market, ws));
     v.appendChild(el('div', { class: 'tk-tiles' }, METRICS.filter((d) => d.tile).map((d) => tile(market, d, latest, prev, bOn, bSt))));
     const sel = el('select', { class: 'tk-sel', 'aria-label': 'Metric to chart' }, METRICS.map((d) => el('option', { value: d.k, text: d.label, selected: d.k === metric })));
     sel.addEventListener('change', () => { metric = sel.value; render(); });
