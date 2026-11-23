@@ -113,6 +113,12 @@
   .tk-table tr.tk-base td { color: var(--muted); font-style: italic; }
   .tk-table td.muted { color: var(--muted); }
   .tk-new { color: var(--ok); } .tk-replace { color: var(--y); }
+  .tk-wrap { margin-bottom: 16px; }
+  .tk-wrap .tk-h { margin: 0; } .tk-wrap > .tk-row { margin-bottom: 10px; }
+  .tk-wrap .tk-row .tk-row { gap: 8px; }
+  .tk-headline { font-weight: 700; margin: 6px 0 10px; color: var(--y); }
+  .tk-bullets { margin: 0; padding-left: 20px; } .tk-bullets li { margin-bottom: 6px; line-height: 1.45; }
+
   @media (max-width: 960px) { .tk-tiles { grid-template-columns: repeat(2, 1fr); } .tk-upload { grid-template-columns: 1fr; } }
   @media (max-width: 960px) { .progress { grid-template-columns: repeat(2, 1fr); } .pcard.total { grid-column: 1 / -1; } }
   @media (max-width: 640px) { .fields { grid-template-columns: 1fr 1fr; } .fields .owner { grid-column: 1 / -1; } .form { grid-template-columns: 1fr; } .wrap { padding: 18px 14px 60px; } }
